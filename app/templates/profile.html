@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="profile-container">
+        <h2>Профиль пользователя: {{ user.full_name }}</h2>
+        <!-- Дополнительные детали профиля -->
+        <p>Email: {{ user.email }}</p>
+        <!-- Показать фотографию, если она есть -->
+        {% if user.profile_photo %}
+            <img src="{{ url_for('static', filename='profile_photos/' + user.profile_photo) }}" alt="Profile Photo">
+        {% endif %}
+        
+        <!-- Отображение подписок на организаторов -->
+        <h3>Мои подписки:</h3>
+        <ul>
+            {% for organaizer in user.subscribed_organaizers %}
+                <li>{{ organaizer.full_name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

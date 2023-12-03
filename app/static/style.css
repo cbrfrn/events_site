@@ -1,0 +1,144 @@
+
+/* ОСНОВНЫЕ */
+
+body {
+    background-color: #1a1a1a;
+    color: #d9d9d9;
+    font-family: 'Arial', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+a {
+    color: #ffffff;
+}
+
+a:hover {
+    color: #ffffff;
+}
+
+
+/* МОДАЛЬНЫЕ ОКНА */
+
+.modal-content {
+    background-color: #1a1a1a; /* Темно-серый фон */
+    color: #d9d9d9; /* Белый текст */
+}
+
+.modal-header, .modal-footer {
+    border: none; /* Убирает границу */
+}
+
+/* Убрать верхнюю границу модального тела, если модальный заголовок отсутствует */
+.modal-body:not(:first-child) {
+    border-top: none;
+}
+
+/* Убрать нижнюю границу модального тела, если модальный футер отсутствует */
+.modal-body:not(:last-child) {
+    border-bottom: none;
+}
+
+
+/* КНОПКИ */ 
+
+.btn-primary {
+    background-color: #343a40; /* Темно-серый фон */
+    border-color: #343a40; /* Темно-серая рамка */
+}
+.btn-primary:hover {
+    background-color: #23272b; /* Чуть более светлый цвет для наведения */
+    border-color: #1d2124;
+}
+
+
+
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.header-logo {
+    text-align: center;
+    color: white;
+    text-decoration: none;
+}
+
+.logo-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.auth-container {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Расстояние между элементами внутри контейнера */
+}
+
+.apply-link {
+    white-space: nowrap; /* Запретить перенос текста на новую строку */
+    margin-right: auto; /* Отодвинуть все последующие элементы вправо */
+    margin-left: 10px; /* Отступ от логотипа */
+}
+
+.auth-btn {
+    margin-left: 10px;
+    padding: 5px 15px;
+    color: #d9d9d9;
+    background-color: transparent;
+    border: 2px solid #d9d9d9;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+
+}
+    
+
+}
+
+.auth-btn:hover {
+    background-color: grey;
+    color: #1a1a1a;
+}
+
+.apply-link:hover {
+    text-decoration: none; /* Подчеркивание при наведении */
+    background: none; /* Убедитесь, что фон не меняется при наведении */
+}
+
+.greeting {
+    position: absolute;
+    left: 10px; /* Или используйте проценты/px в зависимости от вашего дизайна */
+    top: 10px;
+    color: white;
+}
+
+/* Ensure that the auth-container is aligned to the right */
+.header-container {
+    justify-content: space-between;
+}
+
+
+/* Добавьте медиа-запросы для адаптивного дизайна, если необходимо */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+    }
+    .logo-container {
+        order: 2;
+        margin-top: 10px;
+    }
+    .greeting {
+        order: 1;
+    }
+    .auth-container {
+        order: 3;
+    }
+}
+

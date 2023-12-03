@@ -1,0 +1,306 @@
+<!-- templates/register_organaizer.html -->
+{% extends 'base.html' %}
+
+{% block title %}Регистрация организатора{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-4">        
+            <h2>Регистрация организатора</h2>
+            
+            <form id="organaizer-registration-form" method="POST" enctype="multipart/form-data" class="needs-validation">
+                {{ form.hidden_tag() }}
+
+
+                 <!-- НАЗВАНИЕ -->
+                <div class="form-group">
+                    {{ form.full_name.label(class="form-label") }}
+                    {{ form.full_name(class="form-control", required="required") }}
+                </div>
+
+                <!-- КРАТКОЕ ОПИСАНИЕ -->
+                <div class="form-group">
+                    {{ form.short_description.label(class="form-label") }}
+                    {{ form.short_description(class="form-control", required="required") }}
+                </div>
+                
+                <!-- ПОЛНОЕ ОПИСАНИЕ -->
+                <div class="form-group">
+                    {{ form.full_description.label(class="form-label") }}
+                    {{ form.full_description(class="form-control", required="required") }}
+                </div>
+
+                <!-- АДРЕС -->
+                <div class="form-group">
+                    {{ form.address.label(class="form-label") }}
+                    {{ form.address(class="form-control") }}
+                
+                </div>
+
+                <!-- САЙТ -->
+                <div class="form-group">
+                    {{ form.website.label(class="form-label") }}
+                    {{ form.website(class="form-control", required="required") }}
+                </div>
+
+                <!-- ФОТО ПРОФИЛЯ -->
+                <div class="form-group">
+                    {{ form.profile_photo.label(class="form-label") }}
+                    {{ form.profile_photo(class="form-control-file", id="profile-photo-upload", required=True) }}
+                    <div id="profile-photo-error" class="invalid-feedback" style="display: none;"></div>
+                    {% if form.profile_photo.errors %}
+                        <div class="invalid-feedback" style="display: block;">
+                            {{ form.profile_photo.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+                    
+
+                <!-- НИКНЕЙМ -->
+                <div class="form-group">
+                    {{ form.nickname.label(class="form-label") }}
+                    {{ form.nickname(class="form-control", required="required") }}
+                    <div id="nickname-error" class="invalid-feedback"></div>
+                </div>
+
+                <!-- ПОЧТА -->
+                <div class="form-group">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control", required="required") }}
+                    <!-- Клиентская валидация: место для отображения ошибок, выявленных с помощью JavaScript -->
+                    <div class="invalid-feedback" id="email-error"></div>
+                </div>
+
+                <!-- ПАРОЛЬ -->
+                <div class="form-group">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(id='password', class="form-control", required="required") }}
+                    <div id="password-error" class="invalid-feedback"></div>
+                </div>
+
+                <!-- ПОДТВЕРДИТЕ ПАРОЛЬ -->
+                <div class="form-group">
+                    {{ form.confirm_password.label(class="form-label") }}
+                    {{ form.confirm_password(id='confirm-password', class="form-control", required="required") }}
+                    <div id="confirm-password-error" class="invalid-feedback"></div>
+                </div>
+
+
+                <!-- ОТПРАВКА ФОРМЫ -->
+                <div class="form-group">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+        </div>
+    </div>
+</div>
+</form>
+
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel">Уведомление</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="success-link" class="btn btn-secondary" style="display: none;" onclick="window.location='{{ url_for('home') }}'">Главная страница</button>
+                <button id="close-modal" class="btn btn-primary" data-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const profilePhotoInput = document.getElementById('profile-photo-upload');
+        const profilePhotoErrorDiv = document.getElementById('profile-photo-error');
+
+        profilePhotoInput.addEventListener('change', function(e) {
+            // Сброс предыдущих ошибок
+            profilePhotoErrorDiv.style.display = 'none';
+            profilePhotoErrorDiv.textContent = '';
+            profilePhotoInput.classList.remove('is-invalid');
+
+            const file = this.files[0];
+            if (file) {
+                // Проверка размера файла (не более 1МБ)
+                if (file.size > 1024 * 1024) {
+                    profilePhotoErrorDiv.textContent = 'Файл слишком большой, максимальный размер 1 МБ.';
+                    profilePhotoInput.classList.add('is-invalid');
+                    profilePhotoErrorDiv.style.display = 'block';
+                    this.value = ''; // Очистка поля ввода файла
+                }
+                // Проверка типа файла
+                else if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                    profilePhotoErrorDiv.textContent = 'Неверный формат файла. Допустимы только JPG и PNG.';
+                    profilePhotoInput.classList.add('is-invalid');
+                    profilePhotoErrorDiv.style.display = 'block';
+                    this.value = ''; // Очистка поля ввода файла
+                }
+                // Если все проверки пройдены, ничего не делаем
+            }
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const nicknameInput = document.querySelector('#nickname');
+        const nicknameErrorDiv = document.querySelector('#nickname-error');
+        const nicknameRegex = /^[a-zA-Z0-9_]+$/;
+
+        function checkNickname() {
+            if (!nicknameInput.value) {
+                nicknameErrorDiv.textContent = '';
+                nicknameInput.classList.remove('is-invalid');
+                return;
+            }
+
+            if (!nicknameRegex.test(nicknameInput.value)) {
+                nicknameErrorDiv.textContent = 'Никнейм может содержать только латинские буквы, цифры и подчеркивания.';
+                nicknameInput.classList.add('is-invalid');
+            } else {
+                // AJAX-запрос для проверки уникальности никнейма
+                fetch('/check_nickname', {
+                    method: 'POST',
+                    body: JSON.stringify({nickname: nicknameInput.value}),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_taken) {
+                        nicknameErrorDiv.textContent = 'Этот никнейм уже занят.';
+                        nicknameInput.classList.add('is-invalid');
+                    } else {
+                        nicknameErrorDiv.textContent = '';
+                        nicknameInput.classList.remove('is-invalid');
+                    }
+                });
+            }
+        }
+
+        nicknameInput.addEventListener('input', checkNickname);
+        nicknameInput.addEventListener('blur', checkNickname);
+    });
+
+            // ПРОВЕРКА ПОЧТЫ НА ФОРМАТ И УНИКАЛЬНОСТЬ:
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const emailInput = document.querySelector('#email');
+        const emailErrorBox = document.querySelector('#email-error');
+
+        // Функция проверки уникальности электронной почты
+        function checkEmailUniqueness() {
+            fetch('/check_email', {
+                method: 'POST',
+                body: JSON.stringify({email: emailInput.value}),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_taken) {
+                    emailInput.classList.add('is-invalid');
+                    emailErrorBox.textContent = 'Эта почта уже используется.';
+                } else {
+                    emailInput.classList.remove('is-invalid');
+                    emailErrorBox.textContent = '';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при проверке уникальности email:', error);
+            });
+        }
+
+        // Функция валидации формата электронной почты
+        function validateEmailFormat() {
+            const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+            if (!emailRegex.test(emailInput.value) && emailInput.value !== '') {
+                emailInput.classList.add('is-invalid');
+                emailErrorBox.textContent = 'Некорректный формат почты.';
+            } else {
+                emailInput.classList.remove('is-invalid');
+                emailErrorBox.textContent = '';
+                checkEmailUniqueness(); // Вызов проверки уникальности если формат верен
+            }
+        }
+
+        emailInput.addEventListener('blur', validateEmailFormat);
+    });
+
+
+            // ПРОВЕРКА ПАРОЛЯ НА ДОПУСТИМЫЕ СИМВОЛЫ И СОВПАДЕНИЕ:
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.querySelector('#password');
+        const confirmPasswordInput = document.querySelector('#confirm-password');
+        const passwordErrorDiv = document.querySelector('#password-error');
+        const confirmPasswordErrorDiv = document.querySelector('#confirm-password-error');
+
+        function validatePasswordFormat() {
+            const passwordRegex = /^[a-zA-Z0-9_!@#$%^&*]{8,}$/;
+
+            if (!passwordRegex.test(passwordInput.value)) {
+                passwordErrorDiv.textContent = 'Минимум 8 символов (допустимы латинские буквы, цифры и специальные символы)';
+                passwordInput.classList.add('is-invalid');
+            } else {
+                passwordErrorDiv.textContent = '';
+                passwordInput.classList.remove('is-invalid');
+            }
+        }
+
+        function validatePasswordMatch() {
+            if (confirmPasswordInput.value !== passwordInput.value) {
+                confirmPasswordErrorDiv.textContent = 'Пароли не совпадают.';
+                confirmPasswordInput.classList.add('is-invalid');
+            } else {
+                confirmPasswordErrorDiv.textContent = '';
+                confirmPasswordInput.classList.remove('is-invalid');
+            }
+        }
+
+        passwordInput.addEventListener('blur', validatePasswordFormat);
+        confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+        confirmPasswordInput.addEventListener('blur', validatePasswordMatch);
+    });
+
+
+         // УПРАВЛЕНИЕ МОДАЛЬНЫМ ОКНОМ С СООБЩЕНИЯМИ:
+
+    window.addEventListener('DOMContentLoaded', (event) => {
+        const successMessage = "{{ get_flashed_messages(category_filter=['success']) | first }}";
+        const errorMessage = "{{ get_flashed_messages(category_filter=['error']) | first }}";
+        const successLink = document.getElementById('success-link');
+        const closeModal = document.getElementById('close-modal');
+
+        if (successMessage || errorMessage) {
+            let message = successMessage || errorMessage;
+            document.getElementById("modal-message").textContent = message;
+            $('#myModal').modal('show'); // Активация модального окна с помощью Bootstrap
+
+            if (successMessage) {
+                successLink.style.display = 'block'; // Показать кнопку "Главная страница"
+                closeModal.style.display = 'none'; // Скрыть кнопку "OK"
+            } else if (errorMessage) {
+                successLink.style.display = 'none'; // Скрыть кнопку "Главная страница"
+                closeModal.style.display = 'block'; // Показать кнопку "OK"
+            }
+        }
+    });
+
+    </script>
+
+    {% endblock %}

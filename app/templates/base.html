@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Культурные События</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="header-container">
+        {% if current_user.is_authenticated %}
+            <span class="greeting"><a href="{{ url_for('profile', user_id=current_user.id) }}">{{ current_user.full_name }}</a></span>
+        {% endif %}
+        <div class="logo-container">
+            <a href="{{ url_for('home') }}" class="header-logo">БЕЗ НАЗВАНИЯ</a>
+        </div>
+        <div class="auth-container">
+            <a href="{{ url_for('register_organaizer') }}" class="apply-link">стать организатором</a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('logout') }}" class="btn auth-btn">выйти</a>
+            {% else %}
+                <button type="button" class="btn auth-btn" data-toggle="modal" data-target="#accountModal">
+                    войти
+                </button>
+            {% endif %}
+        </div>
+    </header>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <p>© 2023 Культурные События</p>
+    </footer>
+
+    <!-- Модальное окно для входа и регистрации -->
+    <!-- Модальное окно для входа и регистрации -->
+    <div class="modal fade" id="accountModal" tabindex="-1" role="dialog" aria-labelledby="accountModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accountModalLabel">Аккаунт</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Место для отображения ошибок входа -->
+                    <div id="login-error" class="alert alert-danger" style="display: none;"></div>
+
+                    <!-- Навигация по вкладкам -->
+                    <ul class="nav nav-tabs" id="accountTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="login-tab" data-toggle="tab" href="#login" role="tab" aria-controls="login" aria-selected="true">Вход</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="register-tab" data-toggle="tab" href="#register" role="tab" aria-controls="register" aria-selected="false">Регистрация</a>
+                        </li>
+                    </ul>
+
+                    <!-- Контент вкладок -->
+                    <div class="tab-content">
+                        <!-- Вкладка входа -->
+                        <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+                            {% include 'login_form.html' %}
+                        </div>
+                        <!-- Вкладка регистрации -->
+                        <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
+                            {% include 'register_form.html' %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    {% if show_login_modal %}
+    <script>
+        $(document).ready(function() {
+            $('#accountModal').modal('show');
+        });
+    </script>
+    {% endif %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('login-form');
+            const loginModal = $('#accountModal'); // Получаем jQuery объект модального окна
+
+            // Обработка формы входа
+            loginForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Предотвращаем обычную отправку формы
+
+                const formData = new FormData(this);
+                fetch('{{ url_for("login") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'  // Указываем, что это AJAX запрос
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else if (response.status === 401) {
+                        // Если сервер ответил 401, показываем модальное окно
+                        loginModal.modal('show');
+                        throw new Error('Требуется авторизация');
+                    } else {
+                        throw new Error('Ошибка сервера');
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = data.next_url;
+                    } else {
+                        const loginErrorDiv = document.getElementById('login-error');
+                        loginErrorDiv.textContent = data.error;
+                        loginErrorDiv.style.display = 'block';
+                        loginModal.modal('show'); // Открываем модальное окно обратно
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    const loginErrorDiv = document.getElementById('login-error');
+                    loginErrorDiv.textContent = error.message;
+                    loginErrorDiv.style.display = 'block';
+                });
+            });
+        });
+    </script>
+        
+</body>
+</html>

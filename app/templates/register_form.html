@@ -1,0 +1,84 @@
+<!-- register_form.html -->
+<form id="register-form" action="{{ url_for('register_visitor') }}" method="post" class="needs-validation">
+    {{ register_form.hidden_tag() }}
+
+    <!-- Поле Полное Имя -->
+    <div class="form-group">
+        {{ register_form.full_name.label(class="form-label") }}
+        {{ register_form.full_name(class="form-control", id="full-name") }}
+        <div class="invalid-feedback" id="error-full-name"></div>
+    </div>
+    
+    <!-- Поле Email -->
+    <div class="form-group">
+        {{ register_form.email.label(class="form-label") }}
+        {{ register_form.email(class="form-control", id="email") }}
+        <div class="invalid-feedback" id="error-email" style="display: none;"></div>
+    </div>
+    
+    <!-- Поле Пароль -->
+    <div class="form-group">
+        {{ register_form.password.label(class="form-label") }}
+        {{ register_form.password(class="form-control", id="password") }}
+        <div class="invalid-feedback" id="error-password"></div>
+    </div>
+    
+    <!-- Поле Подтверждение Пароля -->
+    <div class="form-group">
+        {{ register_form.confirm_password.label(class="form-label") }}
+        {{ register_form.confirm_password(class="form-control", id="confirm-password") }}
+        <div class="invalid-feedback" id="error-confirm-password"></div>
+    </div>
+    
+    <!-- Кнопка Отправки Формы -->
+    <div class="form-group">
+        {{ register_form.submit(class="btn btn-primary") }}
+    </div>
+</form>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const registerForm = document.getElementById('register-form');
+
+        registerForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Очистка предыдущих ошибок
+            document.querySelectorAll('.invalid-feedback').forEach(function(element) {
+                element.textContent = '';
+                element.style.display = 'none';
+            });
+            document.querySelectorAll('.form-control').forEach(function(inputElement) {
+                inputElement.classList.remove('is-invalid');
+            });
+
+            const formData = new FormData(this);
+            fetch('{{ url_for("register_visitor") }}', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // Для отладки ответа сервера
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    // Обработка ошибок, отображение сообщений об ошибках
+                    Object.entries(data.errors).forEach(([field, errors]) => {
+                        const fieldId = field.replace(/_/g, '-'); // Замена подчеркиваний на дефисы
+                        const errorElement = document.querySelector(`#error-${fieldId}`);
+                        if (errorElement) {
+                            errorElement.textContent = errors.join(' ');
+                            errorElement.style.display = 'block';
+                        }
+                        // Добавление класса 'is-invalid' для визуализации ошибок
+                        const inputElement = document.querySelector(`#${fieldId}`);
+                        if (inputElement) {
+                            inputElement.classList.add('is-invalid');
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Ошибка AJAX запроса:', error));
+        });
+    });
+</script>

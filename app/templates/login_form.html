@@ -1,0 +1,28 @@
+<!-- login_form.html -->
+<form id="login-form" action="{{ url_for('login') }}" method="post">
+    {{ login_form.hidden_tag() }}
+
+    <!-- Поле Email -->
+    <div class="form-group">
+        {{ login_form.email.label(class="form-label") }}
+        {{ login_form.email(class="form-control") }}
+        {% if login_form.email.errors %}
+            <div class="invalid-feedback">{{ login_form.email.errors[0] }}</div>
+        {% endif %}
+    </div>
+    
+    <!-- Поле Пароль -->
+    <div class="form-group">
+        {{ login_form.password.label(class="form-label") }}
+        {{ login_form.password(class="form-control") }}
+        {% if login_form.password.errors %}
+            <div class="invalid-feedback">{{ login_form.password.errors[0] }}</div>
+        {% endif %}
+    </div>
+    
+    <!-- Кнопка Отправки Формы -->
+    <div class="form-group">
+        {{ login_form.submit(class="btn btn-primary") }}
+    </div>
+</form>
+
