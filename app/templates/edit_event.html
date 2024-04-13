@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<!-- Специфичные стили для этой страницы -->
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-3">
+        <div class="row">
+            <div class="col-lg-6 col-md-9 mx-auto">
+                <!-- <h4 class="text-left mb-4">Изменить событие</h4> -->
+                <form method="post" enctype="multipart/form-data" class="mt-3" onsubmit="return validateForm()">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.title.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.title(class="form-control", required=True) }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.photo.label }}</label>
+                        <div class="col-sm-9">
+                            <!-- Элемент для фото (текущего или предпросмотра) -->
+                            
+                            
+                            <!-- Загрузка нового фото -->
+                            <div class="custom-file">
+                                {{ form.photo(class="custom-file-input", id="event-photo-upload") }}
+                                <label class="custom-file-label" for="event-photo-upload">{{ event.photo or 'Выберите файл' }}</label>
+                            </div>
+                            <div id="event-photo-error" class="invalid-feedback" style="display: none;"></div>
+                            <img id="photo-preview" src="{% if event.photo %}{{ url_for('static', filename='uploads/' + event.photo) }}{% endif %}" alt="Фото события" class="mt-2" style="max-width: 200px; ds-height: 200px; {% if not event.photo %}display: none;{% endif %}">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.event_type.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.event_type(class="form-control form-control-select", required=True, id="event_type") }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.start_date.label }}</label>
+                        <div class="col-sm-9 bootstrap-timepicker">
+                            {{ form.start_date(class="form-control", id="start_date") }}
+                            <div id="error_start_date" class="text-danger" style="display: none"></div>
+                        </div>
+                    </div>
+
+                     <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.start_time.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.start_time(class="form-control", id="start_time", required=True) }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3" id="end_date_row" style="display: none;">
+                        <label class="col-sm-3 col-form-label">{{ form.end_date.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.end_date(class="form-control", id="end_date") }}
+                            <div id="error_end_date" class="text-danger" style="display: none"></div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.address.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.address(class="form-control", required=True) }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.description.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.description(class="form-control", required=True, rows=8) }}
+                        </div>
+                    </div>
+
+                   
+                    
+                    <div class="row mb-3" id="price_field">
+                        <label class="col-sm-3 col-form-label">{{ form.price.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.price(class="form-control", id="price") }}
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        {{ form.submit(class="btn btn-fine") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        <input type="hidden" id="organaizer-nickname" value="{{ event.organaizer.nickname }}">
+        <button id="delete-event" class="btn btn-danger" data-toggle="modal" data-target="#deleteConfirmationModal">Удалить событие</button>
+    </div>
+    <!-- Модальное окно Bootstrap для подтверждения удаления -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmationModalLabel">Подтверждение удаления</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Вы уверены, что хотите удалить это событие?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+ 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    
+    <!-- {% block extra_js %}
+    <script>
+        $(document).ready(function() {
+            // Инициализируем Select2 для вашего выпадающего списка
+            $('.form-control-select').select2({
+                minimumResultsForSearch: Infinity,
+                // Ваши параметры для Select2
+            });
+        });
+    </script>
+    {% endblock %} -->
+   
+    <script>
+        $(document).ready(function() {
+            // Инициализируем Select2
+            $('#event_type').select2({
+                minimumResultsForSearch: Infinity,
+            });
+
+            // Функция для переключения видимости поля "дата окончания"
+            function toggleEndDateRow() {
+                var isOngoing = $('#event_type').val() === 'ongoing';
+                $('#end_date_row').css('display', isOngoing ? 'block' : 'none');
+                $('#end_date').attr('required', isOngoing);
+            }
+
+            // Привязываем обработчик к событию изменения выбора Select2
+            $('#event_type').on('select2:select', function(e) {
+                toggleEndDateRow();
+            });
+
+            // Вызываем функцию сразу для установки начального состояния
+            toggleEndDateRow();
+
+            // Другие обработчики событий и функции валидации...
+
+            // Ваши другие скрипты...
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const eventPhotoInput = document.getElementById('event-photo-upload');
+            const eventPhotoErrorDiv = document.getElementById('event-photo-error');
+            const photoPreview = document.getElementById('photo-preview');
+
+            eventPhotoInput.addEventListener('change', function(e) {
+                // Сброс предыдущих ошибок
+                eventPhotoErrorDiv.style.display = 'none';
+                eventPhotoErrorDiv.textContent = '';
+                eventPhotoInput.classList.remove('is-invalid');
+
+                const file = this.files[0];
+                if (file) {
+                    // Проверка размера файла (не более 3МБ)
+                    if (file.size > 3 * 1024 * 1024) {
+                        eventPhotoErrorDiv.textContent = 'Файл слишком большой, максимальный размер 3 МБ.';
+                        eventPhotoInput.classList.add('is-invalid');
+                        eventPhotoErrorDiv.style.display = 'block';
+                        this.value = ''; // Очистка поля ввода файла
+                    }
+                    // Проверка типа файла
+                    else if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                        eventPhotoErrorDiv.textContent = 'Неверный формат файла. Допустимы только JPG и PNG.';
+                        eventPhotoInput.classList.add('is-invalid');
+                        eventPhotoErrorDiv.style.display = 'block';
+                        this.value = ''; // Очистка поля ввода файла
+                    } else {
+                        // Предпросмотр изображения
+                        photoPreview.src = URL.createObjectURL(file);
+                        photoPreview.style.display = 'block';
+                    }
+                }
+            });
+        });
+
+
+        // ПОЯВЛИЕНИЕ ДАТЫ ОКОНЧАНИЯ ПРИ ДЛИТЕЛЬНОМ СОБЫТИИ
+
+        // window.onload = function() {
+        //     var eventType = document.getElementById('event_type');
+        //     var endDateRow = document.getElementById('end_date_row');
+            
+
+        //     function toggleEndDateRow() {
+        //         var isOngoing = eventType.value === 'ongoing';
+        //         endDateRow.style.display = isOngoing ? '' : 'none';
+        //         document.getElementById('end_date').required = isOngoing;
+        //     }
+
+
+        //     // Сразу вызываем функции для установки начального состояния
+        //     toggleEndDateRow();
+
+        //     // Подписываемся на изменения в полях выбора типа события и цены
+        //     eventType.addEventListener('change', toggleEndDateRow);
+        // };
+
+        // Функция для переключения видимости поля "дата окончания"
+
+        
+
+
+
+        function validateForm() {
+            var startDate = document.getElementById('start_date').value;
+            var eventType = document.getElementById('event_type').value;
+            var endDate = document.getElementById('end_date').value;
+            var errorStart = document.getElementById('error_start_date');
+            var errorEnd = document.getElementById('error_end_date');
+            var isValid = true;
+
+            errorStart.style.display = 'none';
+            errorEnd.style.display = 'none';
+
+            if (startDate === '') {
+                errorStart.innerText = 'Укажите дату начала';
+                errorStart.style.display = 'block';
+                isValid = false;
+            }
+            if (eventType === 'ongoing' && endDate === '') {
+                errorEnd.innerText = 'Дата окончания обязательна для длительных событий';
+                errorEnd.style.display = 'block';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        window.addEventListener('load', function() {
+            var start_date = document.getElementById("start_date").value;
+            var end_date = document.getElementById("end_date").value;
+
+            var startPicker = flatpickr("#start_date", {
+                dateFormat: "d.m.Y",
+                minDate: "today",
+                defaultDate: start_date,
+                onChange: function(selectedDates) {
+                    endPicker.set('minDate', selectedDates[0] ? selectedDates[0] : "today");
+                }
+            });
+
+            var endPicker = flatpickr("#end_date", {
+                dateFormat: "d.m.Y",
+                minDate: start_date || "today",
+                defaultDate: end_date
+            });
+
+            $('#start_time').timepicker({
+                showMeridian: false // 24-часовой формат времени
+            });
+        });
+
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            var csrfToken = document.getElementById('csrf_token').value;
+            fetch('{{ url_for('delete_event', event_id=event.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    $('#deleteConfirmationModal').modal('hide');
+                    var organaizerNickname = document.getElementById('organaizer-nickname').value;
+                    window.location.href = '{{ url_for('organaizer', nickname='')}}' + organaizerNickname;
+                }
+            });
+        });
+
+
+        // ОТОБРАЖЕНИЕ ИМЕНИ ФАЙЛА В ЗАГРУЗОЧНОМ ПОЛЕ
+
+        document.getElementById('event-photo-upload').addEventListener('change', function(event) {
+            var fileName = event.target.files[0].name;
+            var nextLabel = event.target.nextElementSibling;
+            nextLabel.innerText = fileName;
+        });
+
+       
+
+
+
+        
+    </script>
+
+    
+
+{% endblock %}

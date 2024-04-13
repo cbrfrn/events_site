@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-3">
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <h1 class="text-center">Создать событие</h1>
+                <form method="post" enctype="multipart/form-data" class="mt-3" onsubmit="return validateForm()">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.title.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.title(class="form-control", required=True) }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.photo.label }}</label>
+                        <div class="col-sm-9">
+                            <!-- Элемент для предпросмотра фото -->
+                            <img id="photo-preview" src="" alt="Предпросмотр фото" class="mb-2" style="max-width: 200px; max-height: 200px; display: none;">
+                            
+                            {{ form.photo(class="form-control-file", required=True, id="event-photo-upload") }}
+                            <div id="event-photo-error" class="invalid-feedback" style="display: none;"></div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.event_type.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.event_type(class="form-control", required=True, id="event_type") }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.start_date.label }}</label>
+                        <div class="col-sm-9 bootstrap-timepicker">
+                            {{ form.start_date(class="form-control", id="start_date") }}
+                            <div id="error_start_date" class="text-danger" style="display: none"></div>
+                        </div>
+                    </div>
+
+                     <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.start_time.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.start_time(class="form-control", id="start_time", required=True) }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3" id="end_date_row">
+                        <label class="col-sm-3 col-form-label">{{ form.end_date.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.end_date(class="form-control", id="end_date") }}
+                            <div id="error_end_date" class="text-danger" style="display: none"></div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.address.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.address(class="form-control", required=True) }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">{{ form.description.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.description(class="form-control", required=True) }}
+                        </div>
+                    </div>
+
+                    
+                    
+                    <div class="row mb-3" id="price_field">
+                        <label class="col-sm-3 col-form-label">{{ form.price.label }}</label>
+                        <div class="col-sm-9">
+                            {{ form.price(class="form-control", id="price") }}
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% block extra_js %}
+    <script>
+        $(document).ready(function() {
+            // Инициализируем Select2 для вашего выпадающего списка
+            $('.form-control-select').select2({
+                minimumResultsForSearch: Infinity,
+                // Ваши параметры для Select2
+            });
+        });
+    </script>
+    {% endblock %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const eventPhotoInput = document.getElementById('event-photo-upload');
+            const eventPhotoErrorDiv = document.getElementById('event-photo-error');
+            const photoPreview = document.getElementById('photo-preview');
+
+            eventPhotoInput.addEventListener('change', function(e) {
+                // Сброс предыдущих ошибок и скрытие текущего изображения (если есть)
+                eventPhotoErrorDiv.style.display = 'none';
+                eventPhotoErrorDiv.textContent = '';
+                eventPhotoInput.classList.remove('is-invalid');
+
+                const file = this.files[0];
+                if (file) {
+                    // Проверка размера файла (не более 3МБ)
+                    if (file.size > 3 * 1024 * 1024) {
+                        eventPhotoErrorDiv.textContent = 'Файл слишком большой, максимальный размер 3 МБ.';
+                        eventPhotoInput.classList.add('is-invalid');
+                        eventPhotoErrorDiv.style.display = 'block';
+                        this.value = ''; // Очистка поля ввода файла
+                    }
+                    // Проверка типа файла (опционально)
+                    else if (!['image/jpeg', 'image/png'].includes(file.type)) {
+                        eventPhotoErrorDiv.textContent = 'Неверный формат файла. Допустимы только JPG и PNG.';
+                        eventPhotoInput.classList.add('is-invalid');
+                        eventPhotoErrorDiv.style.display = 'block';
+                        this.value = ''; // Очистка поля ввода файла
+                    }
+                    if (!eventPhotoErrorDiv.textContent) {
+                        photoPreview.src = URL.createObjectURL(file);
+                        photoPreview.style.display = 'block';
+                    }
+                }
+            });
+        });
+
+        window.onload = function() {
+            var eventType = document.getElementById('event_type');
+            var endDateRow = document.getElementById('end_date_row');
+            // var priceOption = document.getElementById('price_option');
+            // var priceField = document.getElementById('price_field');
+
+            function toggleEndDateRow() {
+                var isOngoing = eventType.value === 'ongoing';
+                endDateRow.style.display = isOngoing ? '' : 'none';
+                document.getElementById('end_date').required = isOngoing;
+            }
+
+            // function togglePriceField() {
+            //     var isPaid = priceOption.value === 'number';
+            //     priceField.style.display = isPaid ? '' : 'none';
+            //     document.getElementById('price').required = isPaid;
+            // }
+
+            // Сразу вызываем функции для установки начального состояния
+            toggleEndDateRow();
+            // togglePriceField();
+
+            // Подписываемся на изменения в полях выбора типа события и цены
+            eventType.addEventListener('change', toggleEndDateRow);
+            // priceOption.addEventListener('change', togglePriceField);
+        };
+
+        function validateForm() {
+            var startDate = document.getElementById('start_date').value;
+            var eventType = document.getElementById('event_type').value;
+            var endDate = document.getElementById('end_date').value;
+            var errorStart = document.getElementById('error_start_date');
+            var errorEnd = document.getElementById('error_end_date');
+            var isValid = true;
+
+            errorStart.style.display = 'none';
+            errorEnd.style.display = 'none';
+
+            if (startDate === '') {
+                errorStart.innerText = 'Укажите дату начала';
+                errorStart.style.display = 'block';
+                isValid = false;
+            }
+            if (eventType === 'ongoing' && endDate === '') {
+                errorEnd.innerText = 'Дата окончания обязательна для длительных событий';
+                errorEnd.style.display = 'block';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        window.addEventListener('load', function() {
+            var start_date = document.getElementById("start_date").value;
+            var end_date = document.getElementById("end_date").value;
+
+            var startPicker = flatpickr("#start_date", {
+                dateFormat: "d.m.Y",
+                minDate: "today",
+                defaultDate: start_date,
+                onChange: function(selectedDates) {
+                    endPicker.set('minDate', selectedDates[0] ? selectedDates[0] : "today");
+                }
+            });
+
+            var endPicker = flatpickr("#end_date", {
+                dateFormat: "d.m.Y",
+                minDate: start_date || "today",
+                defaultDate: end_date
+            });
+
+            $('#start_time').timepicker({
+                showMeridian: false // 24-часовой формат времени
+            });
+        });
+
+        
+    </script>
+
+{% endblock %}

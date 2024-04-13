@@ -1,21 +1,208 @@
-{% extends 'base.html' %}
+    {% extends 'base.html' %}
 
-{% block content %}
-    <div class="profile-container">
-        <h2>Профиль пользователя: {{ user.full_name }}</h2>
-        <!-- Дополнительные детали профиля -->
-        <p>Email: {{ user.email }}</p>
-        <!-- Показать фотографию, если она есть -->
-        {% if user.profile_photo %}
-            <img src="{{ url_for('static', filename='profile_photos/' + user.profile_photo) }}" alt="Profile Photo">
-        {% endif %}
+    {% block content %}
+    <style>
+    
+    /* ПРОФИЛЬ */
+    .visitor-info {
+        display: flex;
+        align-items: start; /* Это выровняет элементы в верхней части контейнера */
+        padding: 20px 0;
+        margin-bottom: 30px;
+    }
+
+    .visitor-photo {
+        width: 120px; /* или нужный размер */
+        border-radius: 50%;
+        margin-right: 20px; /* Отступ справа */
+    }
+    
+    /* имя и число подписок */
+    .visitor-details {
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+    }
         
-        <!-- Отображение подписок на организаторов -->
-        <h3>Мои подписки:</h3>
-        <ul>
-            {% for organaizer in user.subscribed_organaizers %}
-                <li>{{ organaizer.full_name }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-{% endblock %}
+    .settings-button {
+        margin-top: 5px; /* Отступ сверху для кнопки */
+    }
+
+    .subscription-count {
+        font-size: 1.1em; /* Увеличение размера текста подписок */
+        margin-bottom: 3px; /* Небольшой отступ снизу */
+    }
+
+    
+    /* ПОДПИСКИ  */
+
+    .subscription-list {
+        margin-top: 10px;
+
+    }
+   
+    .item-link {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        width: 100%; /* Добавляем ширину */
+    }
+
+    .item-link:hover {
+        text-decoration: none;
+    }
+    
+    .item-link:hover .subscription-item {
+        border-color: #ffffff; /* Белый цвет границы при наведении */
+    }
+
+    .subscription-item {
+        display: flex;
+        align-items: center;
+        border: 2px solid;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 20px;
+        flex-grow: 1; /* Элементы будут растягиваться, чтобы заполнить пространство */
+        transition: border-color 0.3s;
+    }
+
+    .item-photo {
+        width: 50px; /* Установите желаемый размер фото */
+        height: 50px; /* Высота равная ширине для создания круга */
+        border-radius: 50%; /* Делаем фото круглым */
+        object-fit: cover; /* Убедитесь, что изображение заполняет область */
+        margin-right: 10px;
+    }
+
+    .item-details {
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Выравнивание элементов по вертикали */
+    }
+
+
+    .item-organaizer, .item-description {
+        margin: 0; /* Убрать стандартные отступы */
+    }
+
+    .item-organaizer {
+        font-size: 1.2em; /* Больше, чем описание */
+        margin-bottom: 2px; /* Добавляем небольшой отступ между именем и описанием */
+    }
+
+    .item-description {
+        font-size: 0.9em; /* Меньше, чем имя */
+        line-height: 1.2; /* Умеренный интерлиньяж для улучшения читабельности */
+    }
+
+    </style>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-5">
+                <div class="visitor-info">
+                    <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" alt="Profile Photo" class="visitor-photo">
+                    <div class="visitor-details">
+                        <h4>{{ user.full_name }}</h4>
+                        <p class="subscription-count">Подписки: {{ user.subscribed_organaizers.count() }}</p>
+                        {% if current_user.is_authenticated and current_user.id == user.id %}
+                        <button type="button" class="second-btn settings-button" data-toggle="modal" data-target="#settingsModal">
+                            настройки профиля
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="subscription-list">
+                    {% for organaizer in user.subscribed_organaizers %}
+                    <a href="{{ url_for('organaizer', nickname=organaizer.nickname) }}" class="item-link">
+                        <div class="subscription-item">
+                            <img src="{{ url_for('static', filename=organaizer.profile_photo) }}" alt="Organaizer Photo" class="item-photo">
+                            <div class="item-details"> <!-- Новый контейнер для имени и описания -->
+                                <p class="item-organaizer">{{ organaizer.full_name }}</p>
+                                <p class="item-description text-muted">{{ organaizer.short_description }}</p>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- The Modal -->
+        <div class="modal fade" id="settingsModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Настройки профиля</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    <!-- Modal body -->
+                    <div class="modal-body">
+                        <!-- Вставьте здесь форму настроек -->
+                        {% include 'visitor_settings.html' %}
+                        <!-- Кнопка удаления аккаунта -->
+                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteAccountModal" onclick="openDeleteModal()">
+                            Удалить аккаунт
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="deleteAccountModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                            <h4 class="modal-title">Удаление аккаунта</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                        <!-- Modal body -->
+                    <div class="modal-body">
+                            Вы уверены, что хотите удалить свой аккаунт? Это действие необратимо
+                    </div>
+                        <!-- Modal footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteAccount()">Удалить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script type="text/javascript">
+            function deleteAccount() {
+                fetch('{{ url_for("delete_account") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token() }}', // Убедитесь, что csrf_token доступен в вашем шаблоне
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 'user_id': '{{ current_user.id }}' }) // Передача идентификатора текущего пользователя
+                })
+                .then(response => {
+                    // Обработка ответа сервера
+                    if (response.ok) {
+                        window.location.href = "{{ url_for('logout') }}"; // Перенаправление на страницу выхода
+                    } else {
+                        return response.json(); // Возвращаем промис с JSON-ответом, чтобы обработать ошибку ниже
+                    }
+                })
+                .then(data => {
+                    if (data && !data.success) {
+                        alert("Произошла ошибка при удалении аккаунта: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка AJAX запроса:', error);
+                });
+            }
+
+            function openDeleteModal() {
+                $('#settingsModal').modal('hide'); // Закрытие первого модального окна
+                $('#deleteAccountModal').modal('show'); // Открытие второго модального окна
+            }
+        </script>
+        {% endblock %}

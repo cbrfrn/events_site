@@ -1,0 +1,104 @@
+<form id="settings-form" action="{{ url_for('visitor_settings') }}" method="post" class="needs-validation">
+    {{ form.hidden_tag() }}
+
+    <!-- Поле полного имени -->
+    <div class="form-group">
+        {{ form.full_name.label(class="form-label") }}
+        {{ form.full_name(class="form-control") }}
+        <div class="invalid-feedback" id="error-full-name"></div>
+    </div>
+
+    <!-- Поле Email -->
+    <div class="form-group">
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control", id="email-field") }}
+        <div class="invalid-feedback" id="error-email"></div>
+    </div>
+
+    <!-- Поле нового пароля -->
+    <div class="form-group">
+        {{ form.new_password.label(class="form-label") }}
+        {{ form.new_password(class="form-control", id="new-password-field") }}
+        <div class="invalid-feedback" id="error-new-password"></div>
+    </div>
+
+    <!-- Поле текущего пароля (изначально скрытое) -->
+    <div class="form-group" id="current-password-container" style="display: none;">
+        {{ form.current_password.label(class="form-label") }}
+        {{ form.current_password(class="form-control", id="current-password-field") }}
+        <div class="invalid-feedback" id="error-current-password"></div>
+    </div>
+
+    <!-- Кнопка отправки формы -->
+    <div class="form-group">
+        {{ form.submit(class="second-btn") }}
+    </div>
+</form>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const settingsForm = document.getElementById('settings-form');
+        const emailField = document.getElementById('email-field');
+        const newPasswordField = document.getElementById('new-password-field');
+        const currentPasswordFieldContainer = document.getElementById('current-password-container');
+        const currentPasswordField = document.getElementById('current-password-field');
+
+        function toggleCurrentPasswordField() {
+            console.log("Toggling current password field");
+            if (emailField.value != '{{ current_user.email }}' || newPasswordField.value != '') {
+                console.log("Showing current password field");
+                currentPasswordFieldContainer.style.display = 'block';
+                currentPasswordField.setAttribute('required', '');
+            } else {
+                console.log("Hiding current password field");
+                currentPasswordFieldContainer.style.display = 'none';
+                currentPasswordField.removeAttribute('required');
+            }
+        }
+
+        toggleCurrentPasswordField();
+
+        emailField.addEventListener('input', toggleCurrentPasswordField);
+        newPasswordField.addEventListener('input', toggleCurrentPasswordField);
+
+        settingsForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Очистка предыдущих ошибок
+            document.querySelectorAll('.invalid-feedback').forEach(function(element) {
+                element.textContent = '';
+                element.style.display = 'none';
+            });
+            document.querySelectorAll('.form-control').forEach(function(inputElement) {
+                inputElement.classList.remove('is-invalid');
+            });
+
+            const formData = new FormData(this);
+            fetch('{{ url_for("visitor_settings") }}', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Server response:", data); // Добавленная строка для отладки
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    // Обработка ошибок, отображение сообщений об ошибках
+                    Object.entries(data.errors).forEach(([field, errors]) => {
+                        const fieldId = field.replace(/_/g, '-');
+                        const errorElement = document.querySelector(`#error-${fieldId}`);
+                        if (errorElement) {
+                            errorElement.textContent = errors.join(' ');
+                            errorElement.style.display = 'block';
+                        }
+                        const inputElement = document.querySelector(`#${fieldId}`);
+                        if (inputElement) {
+                            inputElement.classList.add('is-invalid');
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Ошибка AJAX запроса:', error));
+        });
+    });
+</script>

@@ -20,7 +20,7 @@ class User(db.Model, UserMixin):
     # Дополнительные поля для организаторов
     nickname = db.Column(db.String(30), unique=True)
     profile_photo = db.Column(db.String(255), nullable=True, default='default_user.jpg')
-    address = db.Column(db.String(100))
+    address = db.Column(db.String(100), nullable=True)
     website = db.Column(db.String(100))
     short_description = db.Column(db.String(100))
     full_description = db.Column(db.Text)
@@ -34,7 +34,7 @@ class User(db.Model, UserMixin):
         backref=db.backref('subscribed_organaizers', lazy='dynamic'), lazy='dynamic')
 
     # Связь с событиями (для организаторов)
-    events = db.relationship('Event', backref='organaizer', lazy=True)
+    events = db.relationship('Event', backref='organaizer', lazy=True, cascade='all, delete-orphan')
 
 # Модель События
 class Event(db.Model):
@@ -48,4 +48,5 @@ class Event(db.Model):
     address = db.Column(db.String(100), nullable=False)
     organaizer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     description = db.Column(db.Text, nullable=False)
+    price = db.Column(db.String(50), nullable=True)
 

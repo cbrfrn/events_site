@@ -1,0 +1,108 @@
+<style>
+ /* Общие стили для карты */
+
+     .truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .card-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      background-color: transparent;
+      border: 2px solid;
+      border-radius: 10px;
+    }
+
+    /* Стили для изображения на мобильных и больших экранах */
+    
+
+    /* Стили для текстовых элементов на мобильных и больших экранах */
+    .event-text {
+      flex-grow: 1;
+      padding: 20px; /* отступы вокруг текста */
+    }
+
+    /* Медиа-запросы для стилей на больших экранах */
+    @media (min-width: 576px) {
+      .card {
+        flex-direction: row; /* горизонтальное расположение на больших экранах */
+      }
+
+      .preview-event-image {
+        min-width: 165px; /* фиксированная ширина на больших экранах */
+        max-width: 165px;
+        height: 165px; /* фиксированная высота на больших экранах */
+        object-fit: cover; /* обрезка изображения */
+      }
+
+      .event-text {
+        padding: 12px;
+        padding-left: 20px;
+        padding-bottom: 0px;
+        max-height: 160px;
+        overflow: hidden;
+      }
+
+      .preview-event-image {
+          border-top-left-radius: 10px;
+          border-bottom-left-radius: 10px;
+        }
+
+      .card-date {
+        font-size: 1.1em;
+      }
+    }
+
+    @media (max-width: 576px) {
+    .preview-event-image {
+      width: 100%; /* ширина изображения равна ширине контейнера */
+      aspect-ratio: 4 / 3; /* пропорции изображения делают его квадратным */
+      object-fit: cover; /* изображение обрезается для заполнения контейнера */
+    }
+    .event-text {
+        padding: 15px;
+        padding-left: 20px;
+    }
+
+    .card-date {
+        font-size: 1.1em;
+    }
+    .preview-event-image {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+  }
+
+</style>
+
+<div class="card mb-1">
+    <!-- Фото события -->
+    <img src="{{ url_for('static', filename='uploads/' + event.photo) }}" class="preview-event-image" alt="{{ event.title }}">
+
+    <!-- Текстовые элементы -->
+    <div class="event-text">
+        <h5 class="card-title mb-2">{{ event.title }}</h5>
+        <p class="card-text mb-2 truncate text-muted">{{ event.organaizer.full_name }}</p>
+        <p class="card-text mb-1 card-date">
+            {% if event.event_type == 'once' %}
+                {{ event.start_date | format_date }}
+                {% if event.start_time %}, {{ event.start_time.strftime('%H:%M') }}{% endif %}
+            {% elif event.event_type == 'ongoing' %}
+                {{ event.start_date | format_date }} - {{ event.end_date | format_date }}
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+
+

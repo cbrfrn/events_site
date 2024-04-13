@@ -1,28 +1,38 @@
 <!-- login_form.html -->
-<form id="login-form" action="{{ url_for('login') }}" method="post">
+<form id="login-form" action="{{ url_for('login') }}" method="post" class="form-horizontal mt-0">
     {{ login_form.hidden_tag() }}
 
     <!-- Поле Email -->
-    <div class="form-group">
-        {{ login_form.email.label(class="form-label") }}
-        {{ login_form.email(class="form-control") }}
-        {% if login_form.email.errors %}
-            <div class="invalid-feedback">{{ login_form.email.errors[0] }}</div>
-        {% endif %}
+    
+    <div class="form-group row justify-content-center">
+        <div class="col-sm-12">
+            {{ login_form.email(class="form-control") }}
+            {% if login_form.email.errors %}
+                <div class="invalid-feedback">{{ login_form.email.errors[0] }}</div>
+            {% endif %}
+        </div>
     </div>
     
     <!-- Поле Пароль -->
-    <div class="form-group">
-        {{ login_form.password.label(class="form-label") }}
-        {{ login_form.password(class="form-control") }}
-        {% if login_form.password.errors %}
-            <div class="invalid-feedback">{{ login_form.password.errors[0] }}</div>
-        {% endif %}
+    <div class="form-group row justify-content-center">
+        <div class="col-sm-12">
+            {{ login_form.password(class="form-control") }}
+            {% if login_form.password.errors %}
+                <div class="invalid-feedback">{{ login_form.password.errors[0] }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="text-left" style="font-size: 0.90em;">
+        <link>Забыли пароль?</link>
     </div>
     
+    
+    
     <!-- Кнопка Отправки Формы -->
-    <div class="form-group">
-        {{ login_form.submit(class="btn btn-primary") }}
+    <div class="form-group row justify-content-center">
+        <div class="col-sm-12 text-center mt-3 mb-2">
+            {{ login_form.submit(class="btn btn-fine btn-block") }}
+        </div>
     </div>
 </form>
 

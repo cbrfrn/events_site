@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+
+{% block title %}Настройки организатора{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">        
+            <h2>Настройки организатора</h2>
+            
+            <form method="POST" enctype="multipart/form-data" class="needs-validation">
+                {{ form.hidden_tag() }}
+
+                <!-- НИКНЕЙМ -->
+                <div class="form-group">
+                    {{ form.nickname.label(class="form-label") }}
+                    {{ form.nickname(class="form-control") }}
+                    <div id="nickname-error" class="invalid-feedback"></div>
+                </div>
+
+                <!-- ПОЧТА -->
+                <div class="form-group">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control") }}
+                    <div id="email-error" class="invalid-feedback"></div>
+                </div>
+
+                <!-- ПАРОЛЬ -->
+                <div class="form-group">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(id='password', class="form-control") }}
+                    <div id="password-error" class="invalid-feedback"></div>
+                </div>
+
+                <!-- ПОДТВЕРДИТЕ ПАРОЛЬ -->
+                <div class="form-group">
+                    {{ form.confirm_password.label(class="form-label") }}
+                    {{ form.confirm_password(id='confirm-password', class="form-control") }}
+                    <div id="confirm-password-error" class="invalid-feedback"></div>
+                </div>
+
+                <!-- ТЕКУЩИЙ ПАРОЛЬ -->
+                <div class="form-group">
+                    {{ form.current_password.label(class="form-label") }}
+                    {{ form.current_password(class="form-control") }}
+                </div>
+
+                <!-- КНОПКА ОТПРАВКИ -->
+                <div class="form-group">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteAccountModal" onclick="openDeleteModal()">Удалить аккаунт</button>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="deleteAccountModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h4 class="modal-title">Удаление аккаунта</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <!-- Modal body -->
+            <div class="modal-body">
+                Вы уверены, что хотите удалить свой аккаунт? Это действие необратимо
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" onclick="deleteAccount()">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel">Уведомление</h5>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message"></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button id="ok-modal" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+        const nicknameInput = document.querySelector('#nickname');
+        const emailInput = document.querySelector('#email');
+        const nicknameErrorDiv = document.querySelector('#nickname-error');
+        const emailErrorBox = document.querySelector('#email-error');
+        const originalNickname = nicknameInput.value;
+        const originalEmail = emailInput.value;
+        const nicknameRegex = /^[a-zA-Z0-9_]+$/;
+
+        function checkNickname() {
+            if (!nicknameInput.value) {
+                nicknameErrorDiv.textContent = '';
+                nicknameInput.classList.remove('is-invalid');
+                return;
+            }
+
+            if (nicknameInput.value === originalNickname) {
+                return; // Не проверяем уникальность, если значение не изменилось
+            }
+
+            if (!nicknameRegex.test(nicknameInput.value)) {
+                nicknameErrorDiv.textContent = 'Никнейм может содержать только латинские буквы, цифры и подчеркивания.';
+                nicknameInput.classList.add('is-invalid');
+            } else {
+                // AJAX-запрос для проверки уникальности никнейма
+                fetch('/check_nickname', {
+                    method: 'POST',
+                    body: JSON.stringify({nickname: nicknameInput.value}),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.is_taken) {
+                        nicknameErrorDiv.textContent = 'Этот никнейм уже занят.';
+                        nicknameInput.classList.add('is-invalid');
+                    } else {
+                        nicknameErrorDiv.textContent = '';
+                        nicknameInput.classList.remove('is-invalid');
+                    }
+                });
+            }
+        }
+
+        function validateEmailFormat() {
+            if (!emailInput.value) {
+                emailErrorBox.textContent = '';
+                emailInput.classList.remove('is-invalid');
+                return;
+            }
+
+            if (emailInput.value === originalEmail) {
+                return; // Не проверяем уникальность, если значение не изменилось
+            }
+
+            const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+            if (!emailRegex.test(emailInput.value)) {
+                emailInput.classList.add('is-invalid');
+                emailErrorBox.textContent = 'Некорректный формат почты.';
+            } else {
+                emailInput.classList.remove('is-invalid');
+                emailErrorBox.textContent = '';
+                checkEmailUniqueness();
+            }
+        }
+
+        function checkEmailUniqueness() {
+            fetch('/check_email', {
+                method: 'POST',
+                body: JSON.stringify({email: emailInput.value}),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_taken) {
+                    emailInput.classList.add('is-invalid');
+                    emailErrorBox.textContent = 'Эта почта уже используется.';
+                } else {
+                    emailInput.classList.remove('is-invalid');
+                    emailErrorBox.textContent = '';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при проверке уникальности email:', error);
+            });
+        }
+
+        nicknameInput.addEventListener('input', checkNickname);
+        nicknameInput.addEventListener('blur', checkNickname);
+        emailInput.addEventListener('blur', validateEmailFormat);
+    });
+
+
+            // ПРОВЕРКА ПАРОЛЯ НА ДОПУСТИМЫЕ СИМВОЛЫ И СОВПАДЕНИЕ:
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.querySelector('#password');
+        const confirmPasswordInput = document.querySelector('#confirm-password');
+        const passwordErrorDiv = document.querySelector('#password-error');
+        const confirmPasswordErrorDiv = document.querySelector('#confirm-password-error');
+
+        function validatePasswordFormat() {
+            const passwordRegex = /^[a-zA-Z0-9_!@#$%^&*]{8,}$/;
+
+            if (passwordInput.value && !passwordRegex.test(passwordInput.value)) {
+                passwordErrorDiv.textContent = 'Минимум 8 символов (допустимы латинские буквы, цифры и специальные символы)';
+                passwordInput.classList.add('is-invalid');
+            } else {
+                passwordErrorDiv.textContent = '';
+                passwordInput.classList.remove('is-invalid');
+            }
+        }
+
+        function validatePasswordMatch() {
+            if (passwordInput.value && confirmPasswordInput.value !== passwordInput.value) {
+                confirmPasswordErrorDiv.textContent = 'Пароли не совпадают.';
+                confirmPasswordInput.classList.add('is-invalid');
+            } else {
+                confirmPasswordErrorDiv.textContent = '';
+                confirmPasswordInput.classList.remove('is-invalid');
+            }
+        }
+
+        passwordInput.addEventListener('blur', validatePasswordFormat);
+        confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+        confirmPasswordInput.addEventListener('blur', validatePasswordMatch);
+    });
+
+
+    // УПРАВЛЕНИЕ МОДАЛЬНЫМ ОКНОМ С СООБЩЕНИЯМИ:
+
+    window.addEventListener('DOMContentLoaded', (event) => {
+        const successMessage = "{{ get_flashed_messages(category_filter=['success']) | first }}";
+        const errorMessage = "{{ get_flashed_messages(category_filter=['error']) | first }}";
+        const okModalButton = document.getElementById('ok-modal');
+
+        if (successMessage || errorMessage) {
+            let message = successMessage || errorMessage;
+            document.getElementById("modal-message").textContent = message;
+            $('#myModal').modal('show');
+
+            okModalButton.addEventListener('click', function() {
+                if (successMessage) {
+                    window.location.href = "{{ url_for('organaizer', nickname=current_user.nickname) }}"; // Переход на страницу организатора
+                } else {
+                    $('#myModal').modal('hide'); // Просто закрыть модальное окно
+                }
+            });
+        }
+    });
+
+    function deleteAccount() {
+                fetch('{{ url_for("delete_account") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token() }}', // Убедитесь, что csrf_token доступен в вашем шаблоне
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 'user_id': '{{ current_user.id }}' }) // Передача идентификатора текущего пользователя
+                })
+                .then(response => {
+                    // Обработка ответа сервера
+                    if (response.ok) {
+                        window.location.href = "{{ url_for('logout') }}"; // Перенаправление на страницу выхода
+                    } else {
+                        return response.json(); // Возвращаем промис с JSON-ответом, чтобы обработать ошибку ниже
+                    }
+                })
+                .then(data => {
+                    if (data && !data.success) {
+                        alert("Произошла ошибка при удалении аккаунта: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка AJAX запроса:', error);
+                });
+            }
+
+            function openDeleteModal() {
+                $('#settingsModal').modal('hide'); // Закрытие первого модального окна
+                $('#deleteAccountModal').modal('show'); // Открытие второго модального окна
+            }
+</script>
+
+
+{% endblock %}

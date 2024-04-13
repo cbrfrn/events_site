@@ -1,6 +1,34 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>страница события</h1>
-   
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-12 col-md-9 col-lg-7 col-xl-6" style="padding: 0px;">
+            <div style="padding: 20px;">
+                <h3 style="text-align: left;" class="mb-2">{{ event.title }}</h3>
+                <p class="mb-0" style="font-size: 1.1em; padding-top: 5px;">
+                {% if event.event_type == 'once' %}
+                    {{ event.start_date | format_date }}
+                    {% if event.start_time %}, {{ event.start_time.strftime('%H:%M') }}{% endif %}
+                {% elif event.event_type == 'ongoing' %}
+                    {{ event.start_date | format_date }} - {{ event.end_date | format_date }}
+                {% endif %}
+                </p> 
+                
+                <img src="{{ url_for('static', filename='uploads/' + event.photo) }}" alt="{{ event.title }}" class="img-fluid my-3" style="width: 100%; height: auto;">
+                
+                 
+                <p> {{ event.organaizer.full_name }} </p>
+                <p style="text-align: left;">{{ event.description }}</p>
+                <p>Адрес: {{ event.address }}</p>
+                <p>Вход: {{ event.price }}</p>
+            </div>
+            {% if current_user.id == event.organaizer_id %}
+            <div class="text-center mt-4">
+                <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-fine">Изменить событие</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

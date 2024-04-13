@@ -1,6 +1,305 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>страница организатора</h1>
-   
+<style>
+
+
+    
+
+    .right-corner-icon:hover,
+    .right-corner-icon:active {
+        color: white;
+    }
+
+ 
+
+    .right-corner-icon {
+        color: #CCCCCC;
+        position: absolute; 
+        top: 0; right: 0; 
+        cursor: pointer; 
+    }
+
+
+    
+
+  
+
+
+    #unsubscribe-btn:hover {
+        color: red;
+    }
+
+
+    .image-upload-wrapper {
+        position: relative;
+        cursor: pointer;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        overflow: hidden; /* Обеспечивает круглую форму для всего wrapper */
+    }
+
+    .overlay-icon {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.5); /* темный и прозрачный цвет */
+        border-radius: 50%;
+        font-size: 24px; /* размер иконки */
+        width: 40px; /* ширина иконки */
+        height: 40px; /* высота иконки */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .overlay-icon:hover {
+        background-color: rgba(0, 0, 0, 0.7); /* светлее и прозрачный цвет при наведении */
+    }
+
+    .overlay-icon:hover i {
+        color: white;
+
+    }
+
+    .overlay-icon i {
+        color: #e0e0e0;
+        pointer-events: none; /* Чтобы клики проходили через иконку на элемент ниже */
+    }
+</style>
+
+
+<div class="container mt-3">
+    <div class="row justify-content-center">
+        <div class="col-12 col-sm-12 col-md-9 col-lg-7 col-xl-6" style="padding: 0px;">
+            <!-- Секция профиля организатора -->
+            <div class="organaizer-profile" style="position: relative; border: 1px solid grey; border-radius: 10px; padding: 20px 20px; margin: 20px; margin-bottom: 40px;">
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename=user.profile_photo) }}" alt="{{ user.full_name }}" class="img-fluid rounded-circle mb-3" style="width: 200px; height: 200px; object-fit: cover; border-radius: 10px;">
+                    <h4>{{ user.full_name }}</h4>
+                    <p class="text-muted mb-3">{{ user.short_description }}</p>
+
+                    
+                </div>
+                {% if current_user.is_authenticated and current_user.type == 'organaizer' and current_user.id == user.id %}
+                    <i class="bi bi-pencil right-corner-icon" id="pencil" data-toggle="modal" data-target="#EditOrganaizerModal" style="font-size: 1.5em; margin-top: 10px; margin-right: 20px"></i>
+                {% endif %}
+                         
+                    <!-- Полное описание организатора -->
+                <div class="text-left mt-2">
+                    <p>{{ user.full_description.replace('\n', '<br>')|safe }}</p>
+                {% if user.address %}
+                    <p style="text-align: left;"><i class="bi bi-geo-alt"></i>  {{ user.address }}</p>
+                {% endif %}
+                {% if user.website %}
+                    <p style="text-align: left;"><i class="bi bi-globe2"></i>  <a href="{{ user.website }}" target="_blank">{{ user.website | replace('http://', '') | replace('https://', '') | replace('www.', '') }}</a></p>
+                {% endif %}
+
+                </div>
+                    
+                <div> 
+                    {% if current_user.is_authenticated and current_user.type == 'visitor' %}
+                        {% if current_user in user.subscribed_visitors %}
+                            <div class="text-center">
+                            <p class="text-muted mb-1">Вы подписаны</p>
+                            <i id="unsubscribe-btn" class="bi bi-check2 right-corner-icon" style="font-size: 2.4em; margin-top: 5px; margin-right: 15px; cursor: pointer;" onclick="unsubscribe({{ user.id }})" onmouseover="this.classList.replace('bi-check2', 'bi-x')" onmouseout="this.classList.replace('bi-x', 'bi-check2')"></i>
+
+                            <!--   -->
+
+
+                            </div>
+                        {% else %}
+                            <div class="text-center">
+                                <p class="text-muted mb-1">Вы не подписаны</p>
+                                <i class="bi bi-plus-lg right-corner-icon" style="font-size: 2.1em; margin-top: 7px; margin-right: 18px;" id="subscribe-btn" onclick="subscribe({{ user.id }})"></i>
+                                <!-- <button id="subscribe-btn" onclick="subscribe({{ user.id }})" class="second-btn org-btn">подписаться</button> -->
+                            </div>
+                        {% endif %}
+                    {% elif current_user.is_authenticated and current_user.type == 'organaizer' and current_user.id == user.id %}
+                        <div class="text-center">
+                            <button type="button" class="second-btn org-btn" onclick="location.href='{{ url_for('create_event') }}'">добавить событие</button>
+                        </div>
+                    {% endif %}
+                </div> 
+            </div>
+            <div style="padding: 20px; padding-top: 0px; margin-top: 30px;">
+                <h4 style="text-align: center; margin-bottom: 20px;"> События: </h4>
+                {% for event in events %}
+                    <a href="{{ url_for('show_event', event_id=event.id) }}" class="card-link">
+                    {% include 'event_preview.html' %}
+                    </a>
+                {% endfor %}
+            </div>
+        </div> 
+    </div>
+    
+
+</div>
+<div class="modal fade" id="EditOrganaizerModal" tabindex="-1" role="dialog" aria-labelledby="EditOrganaizerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 620px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="EditOrganaizerModalLabel">Изменить профиль</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+              <form method="post" action="{{ url_for('edit_organaizer', organaizer_id=user.id) }}" enctype="multipart/form-data" autocomplete="off">
+                {{ edit_organaizer_form.hidden_tag() }}
+
+                <div class="row form-group align-items-center">
+                    {{ edit_organaizer_form.profile_photo.label(class="col-md-3 col-form-label") }}
+                    <div class="col-md-9">
+                        <div class="image-upload-wrapper position-relative" style="width: 100px; height: 100px;">
+                            <img id="current-photo" src="{{ url_for('static', filename=user.profile_photo) }}" class="rounded-circle" alt="Текущее фото" style="width: 100%; height: 100%; object-fit: cover;"/>
+                            <div class="overlay-icon" onclick="document.getElementById('edit_organaizer_form_profile_photo').click();" style="left: 50px; top: 50px;">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
+                            {{ edit_organaizer_form.profile_photo(class="form-control-file d-none", id="edit_organaizer_form_profile_photo") }}
+                        </div>
+                        <div id="file-size-error" class="text-danger small mt-2">Размер файла не должен превышать 1 МБ</div>
+                    </div>
+                </div>
+
+                    <div class="row form-group">
+                        {{ edit_organaizer_form.full_name.label(class="col-md-3 col-form-label") }}
+                        <div class="col-md-9">
+                            {{ edit_organaizer_form.full_name(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="row form-group">
+                        {{ edit_organaizer_form.short_description.label(class="col-md-3 col-form-label pr-0 mr-0") }}
+                        <div class="col-md-9">
+                            {{ edit_organaizer_form.short_description(class="form-control ml-0") }}
+                        </div>
+                    </div>
+                    <div class="row form-group">
+                        {{ edit_organaizer_form.website.label(class="col-md-3 col-form-label") }}
+                        <div class="col-md-9">
+                            {{ edit_organaizer_form.website(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="row form-group">
+                        {{ edit_organaizer_form.address.label(class="col-md-3 col-form-label") }}
+                        <div class="col-md-9">
+                            {{ edit_organaizer_form.address(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="row form-group">
+                        {{ edit_organaizer_form.full_description.label(class="col-md-3 col-form-label") }}
+                        <div class="col-md-9">
+                        {{ edit_organaizer_form.full_description(class="form-control", rows=8) }}
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center mt-3" style="padding: 3px;">
+                        {{ edit_organaizer_form.submit(class="btn btn-fine") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.getElementById('current-photo').addEventListener('click', function() {
+        document.getElementById('edit_organaizer_form_profile_photo').click();
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const fileSizeError = document.getElementById('file-size-error');
+        // Скрыть сообщение об ошибке при загрузке страницы
+        fileSizeError.style.display = 'none';
+
+        const fileInput = document.querySelector('#edit_organaizer_form_profile_photo');
+        fileInput.addEventListener('change', function() {
+            validateFileSize(this);
+        });
+    });
+
+    function validateFileSize(fileInput) {
+        const fileSizeLimit = 1024 * 1024; // 1 MB в байтах
+        const fileSizeError = document.getElementById('file-size-error');
+        if (fileInput.files[0].size > fileSizeLimit) {
+            fileSizeError.style.display = 'block'; // Показать сообщение об ошибке
+            fileInput.value = ""; // Сброс выбранного файла
+        } else {
+            fileSizeError.style.display = 'none'; // Скрыть сообщение об ошибке
+            updatePreview(fileInput); // Обновить превью
+        }
+    }
+
+    function updatePreview(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('current-photo').setAttribute('src', e.target.result);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+        
+    // ПОДПИСАТЬСЯ-ОТПИСАТЬСЯ //
+    function subscribe(organaizerId) {
+       fetch('/subscribe/' + organaizerId, {
+           method: 'POST',
+           headers: {
+               'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value // Получение токена из скрытого input поля
+           }
+       })
+       .then(response => {
+          if (response.ok) {
+            location.reload(); // Перезагрузите страницу для отображения изменений
+          } else {
+             alert('Ошибка при попытке подписаться');
+          }
+       });
+    }
+
+    function unsubscribe(organaizerId) {
+       fetch('/unsubscribe/' + organaizerId, {
+           method: 'POST',
+           headers: {
+               'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value // Получение токена из скрытого input поля
+           }
+       })
+       .then(response => {
+          if (response.ok) {
+            location.reload(); // Перезагрузите страницу для отображения изменений
+          } else {
+             alert('Ошибка при попытке отписаться');
+          }
+       });
+    }
+
+    // Сохраните исходный URL изображения в глобальной переменной
+    let originalPhotoSrc = "{{ url_for('static', filename=user.profile_photo) }}";
+
+    $('#EditOrganaizerModal').on('hidden.bs.modal', function () {
+        const fileSizeError = document.getElementById('file-size-error');
+        const currentPhoto = document.getElementById('current-photo');
+        const fileInput = document.querySelector('#edit_organaizer_form_profile_photo');
+
+        // Скрыть сообщение об ошибке
+        fileSizeError.style.display = 'none';
+
+        // Восстановить исходное изображение
+        currentPhoto.src = originalPhotoSrc;
+
+        // Сбросить выбранный файл
+        fileInput.value = "";
+
+    });
+
+
+    
+
+    
+    
+</script>
 {% endblock %}

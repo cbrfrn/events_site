@@ -1,7 +1,170 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1>Добрый вечер, я диспечер</h1>
-    <p>Здесь вы не найдете нихуя интересного</p>
-    <!-- Содержимое главной страницы -->
+<meta charset="UTF-8">
+
+
+<style type="text/css">
+    .search-box-container {
+        position: relative;
+        margin: 20px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #4f545c;
+        border-radius: 10px;
+        background-color: #2c2f33;
+        color: #e0e0e0 !important;
+        font-size: 16px;
+        transition: border-color 0.5s ease, box-shadow 0.5s ease; /* Добавляем плавный переход */
+    }
+
+
+    .search-input:focus {
+        outline: none;
+        border-color: #e0e0e0;
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        background-color: #2c2f33; /* Светлее цвет фона при фокусировке */
+    }
+
+    .search-results-container {
+        position: absolute;
+        width: calc(100%);
+        background-color: #2c2f33;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        display: none;
+        z-index: 1000;
+        margin-top: 5px;
+    }
+
+    .search-result-item {
+        padding: 10px;
+        color: #CCCCCC;
+        cursor: pointer;
+        background-color: #26292c; /* Чуть более темный фон для каждого элемента */
+    }
+
+    /* Скругляем углы у первого элемента */
+    .search-result-item:first-child {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    /* Скругляем углы у последнего элемента */
+    .search-result-item:last-child {
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+
+    .search-result-item:not(:last-child) {
+        border-bottom: none;
+    }
+
+    .search-result-item:hover {
+        color: #ffffff; /* Текст становится ярче при наведении */
+    }
+
+    .search-profile-photo {
+        width: 40px; /* Или другой подходящий размер */
+        height: 40px; /* Или другой подходящий размер */
+        border-radius: 50%; /* Для круглой формы изображения */
+        margin-right: 10px; /* Отступ справа */
+    }
+
+   
+
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-sm-10">
+            <div class="search-box-container">
+                <input type="text" id="live-search-box" placeholder="Поиск" class="search-input form-control" autocomplete="off">
+                <div id="live-search-results" class="search-results-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    // ПОИСК //
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Загрузка данных организаторов
+        let organaizers = [];
+        fetch('/get_organaizers')
+            .then(response => response.json())
+            .then(data => {
+                organaizers = data; // Сохраняем данные организаторов
+            });
+
+        const searchBox = document.getElementById('live-search-box');
+        const resultsContainer = document.getElementById('live-search-results');
+
+        // Функция для скрытия результатов поиска
+        function hideSearchResults() {
+            resultsContainer.innerHTML = '';
+            resultsContainer.style.display = 'none';
+        }
+
+        // При вводе в строку поиска
+        searchBox.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            if (query === '') {
+                hideSearchResults();
+                return;
+            }
+            if (organaizers.length === 0) {
+                return; // Если данные еще не загружены, не делаем ничего
+            }
+            // Фильтрация по началу имени
+            const filteredOrganaizers = organaizers.filter(organaizer => 
+                organaizer.full_name.toLowerCase().startsWith(query)
+            );
+            displayResults(filteredOrganaizers);
+        });
+
+        // Функция для отображения результатов поиска
+        function displayResults(results) {
+            resultsContainer.style.display = results.length > 0 ? 'block' : 'none';
+            resultsContainer.innerHTML = '';
+            results.forEach(organaizer => {
+                const div = document.createElement('div');
+                div.classList.add('search-result-item');
+
+                // Создаем элемент изображения для фотографии профиля
+                const img = document.createElement('img');
+                img.src = organaizer.profile_photo; // Устанавливаем источник изображения
+                img.alt = 'Профиль'; // Добавляем альтернативный текст
+                img.classList.add('search-profile-photo'); // Добавляем класс для стилизации
+
+                // Добавляем изображение и текст в div
+                div.appendChild(img);
+                div.append(document.createTextNode(organaizer.full_name));
+
+                div.addEventListener('click', () => {
+                    window.location.href = `/${organaizer.nickname}`;
+                });
+                resultsContainer.appendChild(div);
+            });
+        }
+
+        // Скрытие результатов поиска при клике вне их области
+        document.addEventListener('click', function(event) {
+            if (!searchBox.contains(event.target) && !resultsContainer.contains(event.target)) {
+                hideSearchResults();
+            }
+        });
+
+        // Отмена всплытия события клика внутри результатов поиска
+        resultsContainer.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    });
+</script>
+
 {% endblock %}
